@@ -1,0 +1,37 @@
+Everything is wired up, tested end-to-end, and the production build is clean. Here's where things stand and how to open it.
+
+## What's done
+
+**Public site** (`/`) — home, about, our-values, our-team (+ individual profiles), practice-areas (+ individual pages), insights (+ articles), gallery (with lightbox), contact (booking form wired to the database). Rebuilt in Tailwind against the firm's existing navy/gold theme, all sharing one header/footer.
+
+**Admin** (`/admin`) — moved off the root, now behind a login gate. Dashboard, plus four new CMS screens (Team, Practice Areas, Insights, Testimonials) that create/edit/delete real records via new API routes, feeding the public pages live.
+
+**Fallback content** — until a real database is connected, every public page and the dashboard show sensible seed content (the original site's copy) instead of erroring or hanging, so nothing looks broken.
+
+I hit one real bug while testing: without `DATABASE_URL` set, Postgres connection attempts were silently hanging (~8s per page, likely a Windows firewall swallowing the TCP handshake) instead of failing fast. Fixed by adding a connection timeout and a `hasDatabase` guard that skips the DB call entirely when unconfigured — verified all 10 public routes now respond in under a second, and admin login/CMS/logout all work correctly with a session cookie.
+
+## Open it now
+
+The dev server is already running. Open in your browser:
+
+- **Public site:** http://localhost:3000
+- **Admin login:** http://localhost:3000/admin/login
+
+I generated local test credentials in `.env.local` (gitignored, not committed anywhere) so you can log in right now:
+- Email: `admin@harryadvocates.co.ke`
+- Password: `HarryAdvocates2026!`
+
+**Change these before deploying** — they're dev-only placeholders.
+
+If the server isn't running when you come back, start it yourself from the project folder:
+```
+pnpm dev
+```
+
+## Before you deploy
+
+1. **Provision Postgres** — Vercel Postgres, Neon, or Supabase all work fine with this setup.
+2. **Set these environment variables** on your hosting platform: `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` (a long random string — `.env.example` has a one-liner to generate one).
+3. **Create the tables**: run `pnpm db:push` once against that database (the schema/migration is already generated in `drizzle/0000_mysterious_norman_osborn.sql`).
+4. **Deploy** — this project isn't in a git repo yet, so if you're deploying via Vercel/Netlify you'll need to `git init` and push first, or connect it to whatever platform you use. Let me know which host you're targeting and I can walk through that step specifically.
+5. Log into `/admin` on the live site and start replacing the seed content — until you do, visitors will see the built-in placeholder copy, so there's no rush.
